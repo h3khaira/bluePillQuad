@@ -1,0 +1,116 @@
+//
+// !!! WARNING !!! AUTO-GENERATED FILE!
+// PLEASE DO NOT MODIFY IT AND USE "platformio.ini":
+// https://docs.platformio.org/page/projectconf/section_env_build.html#build-flags
+//
+{
+    "configurations": [
+        {
+            "name": "PlatformIO",
+            "includePath": [
+                "/home/h3khaira/projects/bluePillQuad/include",
+                "/home/h3khaira/projects/bluePillQuad/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/Wire/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/avr",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/LL",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/OpenAMP",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb/hid",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb/cdc",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Drivers/STM32F1xx_HAL_Driver/Inc",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Drivers/STM32F1xx_HAL_Driver/Src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/STM32F1xx",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/open-amp/lib/include",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/libmetal/lib/include",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/virtual_driver",
+                "/home/h3khaira/.platformio/packages/framework-cmsis/CMSIS/Core/Include",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Drivers/CMSIS/Device/ST/STM32F1xx/Include",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/gcc",
+                "/home/h3khaira/.platformio/packages/framework-cmsis/CMSIS/DSP/Include",
+                "/home/h3khaira/.platformio/packages/framework-cmsis/CMSIS/DSP/PrivateInclude",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/variants/STM32F1xx/F103C8T_F103CB(T-U)",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/CMSIS_DSP/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/EEPROM/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/IWatchdog/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/Keyboard/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/Mouse/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/RGB_LED_TLC59731/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/SPI/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/Servo/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/SoftwareSerial/src",
+                "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/SrcWrapper/src",
+                ""
+            ],
+            "browse": {
+                "limitSymbolsToIncludedHeaders": true,
+                "path": [
+                    "/home/h3khaira/projects/bluePillQuad/include",
+                    "/home/h3khaira/projects/bluePillQuad/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/Wire/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/avr",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/LL",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/OpenAMP",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb/hid",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino/stm32/usb/cdc",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Drivers/STM32F1xx_HAL_Driver/Inc",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Drivers/STM32F1xx_HAL_Driver/Src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/STM32F1xx",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/ST/STM32_USB_Device_Library/Core/Src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/open-amp/lib/include",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/libmetal/lib/include",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Middlewares/OpenAMP/virtual_driver",
+                    "/home/h3khaira/.platformio/packages/framework-cmsis/CMSIS/Core/Include",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Drivers/CMSIS/Device/ST/STM32F1xx/Include",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/system/Drivers/CMSIS/Device/ST/STM32F1xx/Source/Templates/gcc",
+                    "/home/h3khaira/.platformio/packages/framework-cmsis/CMSIS/DSP/Include",
+                    "/home/h3khaira/.platformio/packages/framework-cmsis/CMSIS/DSP/PrivateInclude",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/cores/arduino",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/variants/STM32F1xx/F103C8T_F103CB(T-U)",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/CMSIS_DSP/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/EEPROM/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/IWatchdog/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/Keyboard/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/Mouse/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/RGB_LED_TLC59731/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/SPI/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/Servo/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/SoftwareSerial/src",
+                    "/home/h3khaira/.platformio/packages/framework-arduinoststm32/libraries/SrcWrapper/src",
+                    ""
+                ]
+            },
+            "defines": [
+                "PLATFORMIO=50204",
+                "STM32F1",
+                "STM32F103xB",
+                "STM32F1xx",
+                "ARDUINO=10808",
+                "ARDUINO_ARCH_STM32",
+                "ARDUINO_BLUEPILL_F103C8",
+                "BOARD_NAME=\"BLUEPILL_F103C8\"",
+                "HAL_UART_MODULE_ENABLED",
+                "USE_FULL_LL_DRIVER",
+                "VARIANT_H=\"variant_PILL_F103Cx.h\"",
+                ""
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++14",
+            "compilerPath": "/home/h3khaira/.platformio/packages/toolchain-gccarmnoneeabi/bin/arm-none-eabi-gcc",
+            "compilerArgs": [
+                "-mcpu=cortex-m3",
+                "-mthumb",
+                ""
+            ]
+        }
+    ],
+    "version": 4
+}
