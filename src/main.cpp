@@ -3,7 +3,8 @@
 
 int16_t gyroRoll, gyroPitch, gyroYaw; //using int16 as mpu6050 returns a 16 bit two's complement value. using int16 will auto resolve it into a 16 bit number instead of 32 bit if you use int
 int16_t gyroAddress = 0x68;
-int16_t temperature; 
+int rawTemp; //mpu6050 outputs 16 bit signed value
+float temperature;
 int16_t xAcc, yAcc, zAcc;
 
 TwoWire Wire1(PB11, PB10); //setting pb11 and pb10 and I2C data and clock signals
@@ -40,8 +41,8 @@ void readOrientation(){
   xAcc = Wire1.read() << 8 | Wire1.read(); // shift high byte left and add to low byte
   yAcc = Wire1.read() << 8 | Wire1.read();
   zAcc = Wire1.read() << 8 | Wire1.read();
-  temperature = Wire1.read() << 8 | Wire1.read();
-  // temperature = temperature/340 + 36.53;
+  rawTemp = Wire1.read() << 8 | Wire1.read();
+  // temperature = rawTemp/340 + 36.53;
   gyroRoll = Wire1.read() << 8 | Wire1.read();
   gyroPitch = Wire1.read() << 8 | Wire1.read();
   gyroYaw = Wire1.read() << 8 | Wire1.read();
@@ -64,5 +65,7 @@ void loop() {
   Serial.print(yAcc);
   Serial.print(" Z = ");
   Serial.println(zAcc);
+  Serial.print("Temperature is ");
+  Serial.println(rawTemp);
   delay(250);
 }
