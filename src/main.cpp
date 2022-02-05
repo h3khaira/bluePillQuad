@@ -82,7 +82,7 @@ void setup()
 {
   Serial.begin(57600);
   // Setting input capture registers
-  TIM2_CR1 = (1U << 0);
+  TIM2_CR1 = (1U << 0); // setting the CEN bit to 1
   pinMode(PB3, OUTPUT);
   Wire1.begin();
   delay(250);
