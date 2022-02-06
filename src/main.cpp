@@ -1,7 +1,18 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define TIM2_CR1 (*(__IO uint32_t *)0x40000000)
+// register addresses for receiver input capture mode
+#define TIM2_CR1 (*(__IO uint32_t *)0x40000000)   // Control register 1, the timer has two registers dedicated to it. Page 406
+#define TIM2_CR2 (*(__IO uint32_t *)0x40000004)   // Control register 2
+#define TIM2_SMCR (*(__IO uint32_t *)0x40000008)  // TIM2 slave mode control register
+#define TIM2_DIER (*(__IO uint32_t *)0x4000000C)  // Interrupt enable register
+#define TIM2_EGR (*(__IO uint32_t *)0x40000010)   // event generation register
+#define TIM2_CCMR1 (*(__IO uint32_t *)0x40000018) // capture compare mode register 1. This register is used to link the input from the receiver to the interrupt.
+#define TIM2_CCMR2 (*(__IO uint32_t *)0x4000001C) // capture compare mode register 2
+#define TIM2_CCER (*(__IO uint32_t *)0x40000020)
+#define TIM2_PSC (*(__IO uint32_t *)0x40000028)
+#define TIM2_ARR (*(__IO uint32_t *)0x4000002C)
+#define TIM2_DCR (*(__IO uint32_t *)0x40000048)
 
 // using int16 as mpu6050 returns a 16 bit two's complement value. using int16 will auto resolve it into a 16 bit number instead of 32 bit if you use int
 int16_t rawGyroRoll, rawGyroPitch, rawGyroYaw;       // gyroscope measurement, resolution based on value of 1B register
@@ -14,6 +25,7 @@ float accRoll, accPitch;           // to store actual acceleration numbers
 float roll, pitch, yaw;
 
 float mpuFilterWeight = 0.96;
+uint32_t loopTimer;
 
 TwoWire Wire1(PB11, PB10); // setting pb11 and pb10 and I2C data and clock signals
 
@@ -82,11 +94,22 @@ void setup()
 {
   Serial.begin(57600);
   // Setting input capture registers
-  TIM2_CR1 = (1U << 0); // setting the CEN bit to 1
+  TIM2_CR1 = 2; // setting the CEN bit to 1, this enables the counter
+  TIM2_CR2 = 0;
+  TIM2_SMCR = 0;
+  TIM2_DIER = 2; // set the CC1IE bit to enable CC1 interrupt
+  TIM2_EGR = 0;
+  TIM2_CCMR1 = 2;
+  TIM2_CCMR2 = 0;
+  TIM2_CCER = 1;     // set the CC1E bit to 1, enabling capture
+  TIM2_PSC = 72;     // set prescaler value to 72 so timer updates at 1 Mhz
+  TIM2_ARR = 0xFFFF; // set value of the autoload register to 65535, this is the highest value the counter can count to
   pinMode(PB3, OUTPUT);
+  pinMode(PB4, OUTPUT);
   Wire1.begin();
   delay(250);
   startGyro();
+  loopTimer = micros();
 }
 
 void loop()
@@ -96,4 +119,9 @@ void loop()
   // Serial.print(roll);
   // Serial.print(" Pitch = ");
   // Serial.println(pitch);
+  if (micros() - loopTimer > 4050)
+    digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
+  while (micros() - loopTimer < 4000)
+    ; // We wait until 4000us are passed.
+  loopTimer = micros();
 }
