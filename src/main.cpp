@@ -1,18 +1,12 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-// register addresses for receiver input capture mode
-#define TIM2_CR1 (*(__IO uint32_t *)0x40000000)   // Control register 1, the timer has two registers dedicated to it. Page 406
-#define TIM2_CR2 (*(__IO uint32_t *)0x40000004)   // Control register 2
-#define TIM2_SMCR (*(__IO uint32_t *)0x40000008)  // TIM2 slave mode control register
-#define TIM2_DIER (*(__IO uint32_t *)0x4000000C)  // Interrupt enable register
-#define TIM2_EGR (*(__IO uint32_t *)0x40000010)   // event generation register
-#define TIM2_CCMR1 (*(__IO uint32_t *)0x40000018) // capture compare mode register 1. This register is used to link the input from the receiver to the interrupt.
-#define TIM2_CCMR2 (*(__IO uint32_t *)0x4000001C) // capture compare mode register 2
-#define TIM2_CCER (*(__IO uint32_t *)0x40000020)
-#define TIM2_PSC (*(__IO uint32_t *)0x40000028)
-#define TIM2_ARR (*(__IO uint32_t *)0x4000002C)
-#define TIM2_DCR (*(__IO uint32_t *)0x40000048)
+#define pin PA2
+
+uint32_t channel;
+volatile uint32_t lastCapture, currentCapture, captureDiff;
+
+HardwareTimer *timer2;
 
 // using int16 as mpu6050 returns a 16 bit two's complement value. using int16 will auto resolve it into a 16 bit number instead of 32 bit if you use int
 int16_t rawGyroRoll, rawGyroPitch, rawGyroYaw;       // gyroscope measurement, resolution based on value of 1B register
@@ -28,6 +22,14 @@ float mpuFilterWeight = 0.96;
 uint32_t loopTimer;
 
 TwoWire Wire1(PB11, PB10); // setting pb11 and pb10 and I2C data and clock signals
+
+void receiverInterrupt(void)
+{
+  currentCapture = TIM2->CNT;
+  captureDiff = currentCapture - lastCapture;
+  lastCapture = currentCapture;
+  Serial.println(currentCapture);
+}
 
 void startGyro()
 {
@@ -93,19 +95,26 @@ void readOrientation()
 void setup()
 {
   Serial.begin(57600);
-  // Setting input capture registers
-  TIM2_CR1 = 2; // setting the CEN bit to 1, this enables the counter
-  TIM2_CR2 = 0;
-  TIM2_SMCR = 0;
-  TIM2_DIER = 2; // set the CC1IE bit to enable CC1 interrupt
-  TIM2_EGR = 0;
-  TIM2_CCMR1 = 2;
-  TIM2_CCMR2 = 0;
-  TIM2_CCER = 1;     // set the CC1E bit to 1, enabling capture
-  TIM2_PSC = 72;     // set prescaler value to 72 so timer updates at 1 Mhz
-  TIM2_ARR = 0xFFFF; // set value of the autoload register to 65535, this is the highest value the counter can count to
+  TIM_TypeDef *instance = (TIM_TypeDef *)pinmap_peripheral(digitalPinToPinName(pin), PinMap_PWM);
+  channel = STM_PIN_CHANNEL(pinmap_function(digitalPinToPinName(pin), PinMap_PWM));
+  timer2 = new HardwareTimer(instance);
 
-  NVIC_EnableIRQ(TIM2_IRQn); // Enable timer 2 interrupt
+  // timer2->setMode(2, TIMER_INPUT_CAPTURE_RISING, PA2);
+  timer2->attachInterrupt(channel, receiverInterrupt); // attach interrupt to timer 2 channel 3
+  TIM2->CR1 = TIM_CR1_CEN;
+  TIM2->CR2 = 0;
+  TIM2->SMCR = 0;
+  TIM2->DIER = TIM_DIER_CC3IE; // set the CC1IE bit to enable CC1 interrupt
+  TIM2->EGR = 0;
+  // TIM2->CCMR1 = 0b100000001;
+  TIM2->CCMR1 = TIM_CCMR1_CC1S_1;
+  TIM2->CCMR2 = 0;
+  TIM2->CCER = TIM_CCER_CC3E; // set the CC1E bit to 1, enabling capture
+  TIM2->PSC = 71;             // set prescaler value to 72 so timer updates at 1 Mhz
+  TIM2->ARR = 0xFFFF;         // set value of the autoload register to 65535, this is the highest value the counter can count to
+  TIM2->DCR = 0;
+  // timer2->attachInterrupt(channel, receiverInterrupt);
+
   pinMode(PB3, OUTPUT);
   pinMode(PB4, OUTPUT);
   digitalWrite(PB4, LOW);
@@ -128,11 +137,4 @@ void loop()
   while (micros() - loopTimer < 4000)
     ; // We wait until 4000us are passed.
   loopTimer = micros();
-}
-
-extern "C" void TIM2_IRQHandler(void)
-{
-  digitalWrite(PB3, HIGH);
-  Serial.println("Interrup triggered");
-  TIM2->SR &= ~TIM_SR_CC1IF;
 }
