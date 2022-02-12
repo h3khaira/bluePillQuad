@@ -4,7 +4,10 @@
 #define pin PA2
 
 uint32_t channel;
-volatile uint32_t lastCapture, currentCapture, captureDiff;
+volatile int32_t channel1, channel1Rise;
+volatile int32_t channel2, channel2Rise;
+volatile int32_t channel3, channel3Rise;
+volatile int32_t channel4, channel4Rise;
 
 HardwareTimer *timer2;
 
@@ -23,12 +26,66 @@ uint32_t loopTimer;
 
 TwoWire Wire1(PB11, PB10); // setting pb11 and pb10 and I2C data and clock signals
 
-void receiverInterrupt(void)
+void receiverInterruptChannel1(void)
 {
-  currentCapture = TIM2->CNT;
-  captureDiff = currentCapture - lastCapture;
-  lastCapture = currentCapture;
-  Serial.println(currentCapture);
+  if (0b1 & GPIOA->IDR >> 0)
+  { // If the input coming in from the IDR registers in high
+    channel1Rise = TIM2->CCR1;
+    TIM2->CCER |= TIM_CCER_CC1P;
+  }
+  else
+  {
+    channel1 = TIM2->CCR1 - channel1Rise;
+    if (channel1 < 0)
+      channel1 += 0xFFFF;
+    TIM2->CCER &= ~TIM_CCER_CC1P;
+  }
+}
+void receiverInterruptChannel2(void)
+{
+  if (0b1 & GPIOA->IDR >> 1)
+  { // If the input coming in from the IDR registers in high
+    channel2Rise = TIM2->CCR2;
+    TIM2->CCER |= TIM_CCER_CC2P;
+  }
+  else
+  {
+    channel2 = TIM2->CCR2 - channel2Rise;
+    if (channel2 < 2)
+      channel2 += 0xFFFF;
+    TIM2->CCER &= ~TIM_CCER_CC2P;
+  }
+}
+void receiverInterruptChannel3(void)
+{
+  if (0b1 & GPIOA->IDR >> 2)
+  { // If the input coming in from the IDR registers in high
+    channel3Rise = TIM2->CCR3;
+    TIM2->CCER |= TIM_CCER_CC3P;
+  }
+  else
+  {
+    channel3 = TIM2->CCR3 - channel3Rise;
+    if (channel3 < 0)
+      channel3 += 0xFFFF;
+    TIM2->CCER &= ~TIM_CCER_CC3P;
+  }
+}
+
+void receiverInterruptChannel4(void)
+{
+  if (0b1 & GPIOA->IDR >> 3)
+  { // If the input coming in from the IDR registers in high
+    channel4Rise = TIM2->CCR4;
+    TIM2->CCER |= TIM_CCER_CC4P;
+  }
+  else
+  {
+    channel4 = TIM2->CCR4 - channel4Rise;
+    if (channel4 < 0)
+      channel4 += 0xFFFF;
+    TIM2->CCER &= ~TIM_CCER_CC4P;
+  }
 }
 
 void startGyro()
@@ -100,20 +157,22 @@ void setup()
   timer2 = new HardwareTimer(instance);
 
   // timer2->setMode(2, TIMER_INPUT_CAPTURE_RISING, PA2);
-  timer2->attachInterrupt(channel, receiverInterrupt); // attach interrupt to timer 2 channel 3
-  TIM2->CR1 = TIM_CR1_CEN;
+  timer2->attachInterrupt((uint32_t)1, receiverInterruptChannel1); // attach interrupt to timer 2 channel 4
+  timer2->attachInterrupt((uint32_t)2, receiverInterruptChannel2); // attach interrupt to timer 2 channel 4
+  timer2->attachInterrupt((uint32_t)3, receiverInterruptChannel3); // attach interrupt to timer 2 channel 4
+  timer2->attachInterrupt((uint32_t)4, receiverInterruptChannel4); // attach interrupt to timer 2 channel 4
+  TIM2->CR1 = TIM_CR1_CEN;                                         // this enables the counter clock
   TIM2->CR2 = 0;
-  TIM2->SMCR = 0;
-  TIM2->DIER = TIM_DIER_CC3IE; // set the CC1IE bit to enable CC1 interrupt
+  TIM2->SMCR = 0;                                                                 // this ensures the internal clock is used by the timer
+  TIM2->DIER = TIM_DIER_CC1IE | TIM_DIER_CC2IE | TIM_DIER_CC3IE | TIM_DIER_CC4IE; // capture/compare 1,2,3,4 interrupt enable
   TIM2->EGR = 0;
   // TIM2->CCMR1 = 0b100000001;
-  TIM2->CCMR1 = TIM_CCMR1_CC1S_1;
-  TIM2->CCMR2 = 0;
-  TIM2->CCER = TIM_CCER_CC3E; // set the CC1E bit to 1, enabling capture
-  TIM2->PSC = 71;             // set prescaler value to 72 so timer updates at 1 Mhz
-  TIM2->ARR = 0xFFFF;         // set value of the autoload register to 65535, this is the highest value the counter can count to
+  TIM2->CCMR1 = 0b100000001;                                                  // set CC1S and CC2S bits to 01
+  TIM2->CCMR2 = 0b100000001;                                                  // set CC3S and CC4S bits to 01
+  TIM2->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E | TIM_CCER_CC4E; // configure the capture compare cannels to input and detect rising edges
+  TIM2->PSC = 71;                                                             // set prescaler value to 72 so timer updates at 1 Mhz
+  TIM2->ARR = 0xFFFF;                                                         // set value of the autoload register to 65535, this is the highest value the counter can count to
   TIM2->DCR = 0;
-  // timer2->attachInterrupt(channel, receiverInterrupt);
 
   pinMode(PB3, OUTPUT);
   pinMode(PB4, OUTPUT);
@@ -137,4 +196,16 @@ void loop()
   while (micros() - loopTimer < 4000)
     ; // We wait until 4000us are passed.
   loopTimer = micros();
+
+  Serial.print("Channel 1: ");
+  Serial.print(channel1);
+  Serial.print(" ");
+  Serial.print("Channel 2: ");
+  Serial.print(channel2);
+  Serial.print(" ");
+  Serial.print("Channel 3: ");
+  Serial.print(channel3);
+  Serial.print(" ");
+  Serial.print("Channel 4: ");
+  Serial.println(channel4);
 }
