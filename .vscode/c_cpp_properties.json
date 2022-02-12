@@ -89,7 +89,7 @@
                 ]
             },
             "defines": [
-                "PLATFORMIO=50204",
+                "PLATFORMIO=50205",
                 "STM32F1",
                 "STM32F103xB",
                 "PIO_FRAMEWORK_ARDUINO_ENABLE_CDC",
@@ -107,6 +107,8 @@
                 "HAL_UART_MODULE_ENABLED",
                 "USE_FULL_LL_DRIVER",
                 "VARIANT_H=\"variant_PILL_F103Cx.h\"",
+                "BL_HID",
+                "VECT_TAB_OFFSET=0x800",
                 "USBD_USE_CDC",
                 "USBCON",
                 "USB_VID=0x1EAF",

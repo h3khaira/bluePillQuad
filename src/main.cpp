@@ -104,8 +104,11 @@ void setup()
   TIM2_CCER = 1;     // set the CC1E bit to 1, enabling capture
   TIM2_PSC = 72;     // set prescaler value to 72 so timer updates at 1 Mhz
   TIM2_ARR = 0xFFFF; // set value of the autoload register to 65535, this is the highest value the counter can count to
+
+  NVIC_EnableIRQ(TIM2_IRQn); // Enable timer 2 interrupt
   pinMode(PB3, OUTPUT);
   pinMode(PB4, OUTPUT);
+  digitalWrite(PB4, LOW);
   Wire1.begin();
   delay(250);
   startGyro();
@@ -119,9 +122,17 @@ void loop()
   // Serial.print(roll);
   // Serial.print(" Pitch = ");
   // Serial.println(pitch);
+
   if (micros() - loopTimer > 4050)
     digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
   while (micros() - loopTimer < 4000)
     ; // We wait until 4000us are passed.
   loopTimer = micros();
+}
+
+extern "C" void TIM2_IRQHandler(void)
+{
+  digitalWrite(PB3, HIGH);
+  Serial.println("Interrup triggered");
+  TIM2->SR &= ~TIM_SR_CC1IF;
 }
