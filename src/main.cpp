@@ -3,6 +3,7 @@
 
 #define pinGroupTimer1 PA2
 #define pinGroupTimer2 PA6
+#define pinGroupTimer3 PB6
 
 volatile int32_t rawReceiverLeftRoller, timer2Channel1Rise;
 volatile int32_t rawReceiverRightRoller, timer2Channel2Rise;
@@ -13,6 +14,7 @@ volatile int32_t rawReceiverRoll, timer3Channel2Rise;
 
 HardwareTimer *timer2;
 HardwareTimer *timer3;
+HardwareTimer *timer4;
 
 // using int16 as mpu6050 returns a 16 bit two's complement value. using int16 will auto resolve it into a 16 bit number instead of 32 bit if you use int
 int16_t rawGyroRoll, rawGyroPitch, rawGyroYaw;       // gyroscope measurement, resolution based on value of 1B register
@@ -160,6 +162,29 @@ void setupTimers()
   TIM3->PSC = 71;                             // set prescaler value to 72 so timer updates at 1 Mhz
   TIM3->ARR = 0xFFFF;                         // set value of the autoload register to 65535, this is the highest value the counter can count to
   TIM3->DCR = 0;
+
+  // setting up timer 4 to serve as the PWM output for the drone motors
+  TIM_TypeDef *instanceTimer4 = (TIM_TypeDef *)pinmap_peripheral(digitalPinToPinName(pinGroupTimer3), PinMap_PWM);
+  timer4 = new HardwareTimer(instanceTimer4);
+  timer4->setMode(1, TIMER_OUTPUT_COMPARE_PWM1, PB6); // pin high when counter < channel compare, low otherwise
+  timer4->setMode(2, TIMER_OUTPUT_COMPARE_PWM1, PB7);
+  timer4->setMode(3, TIMER_OUTPUT_COMPARE_PWM1, PB8);
+  timer4->setMode(4, TIMER_OUTPUT_COMPARE_PWM1, PB9);
+  TIM4->CR1 = TIM_CR1_CEN; // this enables the counter clock
+  TIM4->CR2 = 0;
+  TIM4->SMCR = 0; // this ensures the internal clock is used by the timer
+  TIM4->DIER = 0; // since we will be using this as PWM, we dont need to enable interrupts on these pins
+  TIM4->EGR = 0;
+  TIM4->CCMR1 = 0b0110100001101000;                                           // setting OC2M and OC1M bits to 110, also setting OC2PE and OC1PE bits to 1
+  TIM4->CCMR2 = 0b0110100001101000;                                           // setting OC2M and OC1M bits to 110, also setting OC2PE and OC1PE bits to 1
+  TIM4->CCER = TIM_CCER_CC1E | TIM_CCER_CC2E | TIM_CCER_CC3E | TIM_CCER_CC4E; // configure the capture compare cannels to output rising edges
+  TIM4->PSC = 71;                                                             // set prescaler value to 72 so timer updates at 1 Mhz
+  TIM4->ARR = 5000;                                                           // set value of the autoload register to 65535, this is the highest value the counter can count to
+  TIM4->DCR = 0;
+  TIM4->CCR1 = 1000; // register value here determines the pulse length, a 1000 microsecond length here initializes the motors
+  TIM4->CCR2 = 1000;
+  TIM4->CCR3 = 1000;
+  TIM4->CCR4 = 1000;
 }
 
 void startGyro()
