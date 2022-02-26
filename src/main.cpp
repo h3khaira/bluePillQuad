@@ -20,6 +20,7 @@ HardwareTimer *timer4;
 int16_t rawGyroRoll, rawGyroPitch, rawGyroYaw;       // gyroscope measurement, resolution based on value of 1B register
 float rollCal = -298, pitchCal = -175, yawCal = 230; // for calibration ofgyro measurements
 int16_t gyroAddress = 0x68;                          // MPU-6050 I2C address
+int16_t altimeterAddress = 0x77;
 int16_t rawTemp;
 float temperature;
 int16_t rawXAcc, rawYAcc, rawZAcc; // Raw gyro acceleration values 4096 least significant bits per 9.81 m/s^2
@@ -28,6 +29,8 @@ float roll, pitch, yaw;
 
 float mpuFilterWeight = 0.96;
 uint32_t loopTimer;
+
+uint16_t c[6];
 
 TwoWire Wire1(PB11, PB10); // setting pb11 and pb10 and I2C data and clock signals
 
@@ -210,6 +213,26 @@ void startGyro()
   Wire1.endTransmission();
 }
 
+void startAltimeter()
+{
+  Wire1.beginTransmission(altimeterAddress);
+  Wire1.write(0x1E); // Reset command
+  Wire1.endTransmission();
+  delay(250);
+  int i;
+  // getting calibration values from altimeter PROM, each "C" variable is 2 bytes in length, so we increment the address by 2
+  for (i = 1; i <= 6; i++)
+  {
+    Wire1.beginTransmission(altimeterAddress);
+    Wire1.write(0xA0 + i * 2);
+    Wire1.endTransmission();
+    Wire1.requestFrom(altimeterAddress, 2);
+    while (Wire1.available() < 2)
+      ;
+    c[i - 1] = Wire1.read() << 8 | Wire1.read(); // c is a 16 bit integer
+  }
+}
+
 void eulerAngles()
 {
   accRoll = 57.2958 * atan2(rawYAcc, rawZAcc);
@@ -258,6 +281,8 @@ void setup()
   Wire1.begin();
   delay(250);
   startGyro();
+  startAltimeter();
+  delay(250);
   loopTimer = micros();
 }
 
@@ -275,9 +300,9 @@ void loop()
     ; // We wait until 4000us are passed.
   loopTimer = micros();
 
-  Serial.print("Channel 1: ");
-  Serial.print(rawReceiverPitch);
-  Serial.print(" ");
-  Serial.print("Channel 2: ");
-  Serial.println(rawReceiverRoll);
+  // Serial.print("Channel 1: ");
+  // Serial.print(rawReceiverPitch);
+  // Serial.print(" ");
+  // Serial.print("Channel 2: ");
+  // Serial.println(rawReceiverRoll);
 }
