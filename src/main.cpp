@@ -11,6 +11,8 @@ volatile int32_t rawReceiverYaw, timer2Channel3Rise;
 volatile int32_t rawReceiverThrottle, timer2Channel4Rise;
 volatile int32_t rawReceiverPitch, timer3Channel1Rise;
 volatile int32_t rawReceiverRoll, timer3Channel2Rise;
+int throttle, receiverRoll, receiverPitch, receiverYaw;
+int receiverAuthority = 200; // governs how impactful the piutch and roll inputs on the receiver are
 
 HardwareTimer *timer2;
 HardwareTimer *timer3;
@@ -18,7 +20,7 @@ HardwareTimer *timer4;
 
 // using int16 as mpu6050 returns a 16 bit two's complement value. using int16 will auto resolve it into a 16 bit number instead of 32 bit if you use int
 int16_t rawGyroRoll, rawGyroPitch, rawGyroYaw;       // gyroscope measurement, resolution based on value of 1B register
-float rollCal = -298, pitchCal = -175, yawCal = 230; // for calibration ofgyro measurements
+float pitchCal = -293, rollCal = -175, yawCal = 230; // for calibration ofgyro measurements
 int16_t gyroAddress = 0x68;                          // MPU-6050 I2C address
 int16_t altimeterAddress = 0x77;
 int16_t rawTemp;
@@ -235,8 +237,8 @@ void startAltimeter()
 
 void eulerAngles()
 {
-  accRoll = 57.2958 * atan2(rawYAcc, rawZAcc);
-  accPitch = 57.2958 * atan2(rawXAcc, sqrt(pow(rawYAcc, 2) + pow(rawZAcc, 2)));
+  accPitch = 57.2958 * atan2(rawYAcc, rawZAcc);
+  accRoll = 57.2958 * atan2(rawXAcc, sqrt(pow(rawYAcc, 2) + pow(rawZAcc, 2)));
 }
 
 void readOrientation()
@@ -252,8 +254,8 @@ void readOrientation()
   rawZAcc = Wire1.read() << 8 | Wire1.read();
   rawTemp = Wire1.read() << 8 | Wire1.read();
   // temperature = rawTemp/340.0 + 36.53; //uncomment this to read temperature
-  rawGyroRoll = Wire1.read() << 8 | Wire1.read();
   rawGyroPitch = Wire1.read() << 8 | Wire1.read();
+  rawGyroRoll = Wire1.read() << 8 | Wire1.read();
   rawGyroYaw = Wire1.read() << 8 | Wire1.read();
 
   // calibrating raw gyro values based on offsets measured in setup
@@ -269,6 +271,12 @@ void readOrientation()
 
   roll = mpuFilterWeight * roll + (1 - mpuFilterWeight) * accRoll;    // combining accelerometer and gyroscope measurements
   pitch = mpuFilterWeight * pitch + (1 - mpuFilterWeight) * accPitch; // combining accelerometer and gyroscope measurements
+}
+void scaleReceiver()
+{
+  throttle = (float(rawReceiverThrottle) - 1169) / 664 * 1000 + 1000; // normalize throttle between 1000 and 2000 microsecond pulse length
+  receiverPitch = (float(rawReceiverPitch) - 1489) / 652 * (2 * receiverAuthority);
+  receiverRoll = (float(rawReceiverRoll) - 1491) / 760 * (2 * receiverAuthority);
 }
 
 void setup()
@@ -293,16 +301,14 @@ void loop()
   // Serial.print(roll);
   // Serial.print(" Pitch = ");
   // Serial.println(pitch);
-
+  scaleReceiver();
+  TIM4->CCR1 = throttle; // send throttle signal to motor
+  TIM4->CCR2 = throttle; // send throttle signal to motor
+  TIM4->CCR3 = throttle; // send throttle signal to motor
+  TIM4->CCR4 = throttle; // send throttle signal to motor
   if (micros() - loopTimer > 4050)
     digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
   while (micros() - loopTimer < 4000)
     ; // We wait until 4000us are passed.
   loopTimer = micros();
-
-  // Serial.print("Channel 1: ");
-  // Serial.print(rawReceiverPitch);
-  // Serial.print(" ");
-  // Serial.print("Channel 2: ");
-  // Serial.println(rawReceiverRoll);
 }
