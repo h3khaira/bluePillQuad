@@ -12,7 +12,18 @@ volatile int32_t rawReceiverThrottle, timer2Channel4Rise;
 volatile int32_t rawReceiverPitch, timer3Channel1Rise;
 volatile int32_t rawReceiverRoll, timer3Channel2Rise;
 int throttle, receiverRoll, receiverPitch, receiverYaw;
-int receiverAuthority = 200; // governs how impactful the piutch and roll inputs on the receiver are
+int receiverAuthority = 45; // governs how impactful the piutch and roll inputs on the receiver are, number represents max angle of tilt
+
+float rollPGain = 1.3;
+float rollDGain = 0.04;
+// float rollIGain = 18.0;
+float rollIGain = 0.01;
+
+float pitchPGain = rollPGain;
+float pitchDGain = rollDGain;
+float pitchIGain = rollIGain;
+
+float errorRoll, errorPitch, lastErrorRoll, lastErrorPitch, pitchInput, rollInput, integralInputPitch, integralInputRoll, pitchSum, rollSum;
 
 HardwareTimer *timer2;
 HardwareTimer *timer3;
@@ -266,17 +277,60 @@ void readOrientation()
   eulerAngles();
 
   // 0.000061 = 1/250/65.5
+  // positive pitch = nose up, positive roll = clockwise facing forward
   roll += rawGyroRoll * 0.0000611; // integrating gyroscope velocity measurements by using sampling rate of 250 Hz
   pitch += rawGyroPitch * 0.0000611;
 
-  roll = mpuFilterWeight * roll + (1 - mpuFilterWeight) * accRoll;    // combining accelerometer and gyroscope measurements
-  pitch = mpuFilterWeight * pitch + (1 - mpuFilterWeight) * accPitch; // combining accelerometer and gyroscope measurements
+  roll = (mpuFilterWeight * roll + (1 - mpuFilterWeight) * accRoll) * -1; // combining accelerometer and gyroscope measurements
+  pitch = mpuFilterWeight * pitch + (1 - mpuFilterWeight) * accPitch;     // combining accelerometer and gyroscope measurements
 }
 void scaleReceiver()
 {
   throttle = (float(rawReceiverThrottle) - 1169) / 664 * 1000 + 1000; // normalize throttle between 1000 and 2000 microsecond pulse length
   receiverPitch = (float(rawReceiverPitch) - 1489) / 652 * (2 * receiverAuthority);
   receiverRoll = (float(rawReceiverRoll) - 1491) / 760 * (2 * receiverAuthority);
+}
+
+void pidCalc()
+{
+  pitchInput = 0; // reset pid inputs every cycle
+  rollInput = 0;
+  errorPitch = receiverPitch - pitch;
+  errorRoll = receiverRoll - roll;
+  if (abs(errorPitch) < 1)
+  {
+    errorPitch = 0;
+  }
+  if (abs(errorRoll) < 1)
+  {
+    errorRoll = 0;
+  }
+  integralInputPitch = pitchIGain * pitchSum;
+  integralInputRoll = rollIGain * rollSum;
+  if (integralInputPitch > 100)
+  {
+    integralInputPitch = 100;
+  }
+  else if (integralInputPitch < -100)
+  {
+    integralInputRoll = -100;
+  }
+
+  if (integralInputRoll > 100)
+  {
+    integralInputRoll = 100;
+  }
+  else if (integralInputRoll < -100)
+  {
+    integralInputRoll = -100;
+  }
+
+  pitchInput = pitchPGain * errorPitch + pitchDGain * (errorPitch - lastErrorPitch) + integralInputPitch;
+  rollInput = rollPGain * errorRoll + rollDGain * (errorRoll - lastErrorRoll) + integralInputRoll;
+  lastErrorPitch = errorPitch;
+  lastErrorRoll = errorRoll;
+  pitchSum += errorPitch;
+  rollSum += errorRoll;
 }
 
 void setup()
@@ -297,15 +351,13 @@ void setup()
 void loop()
 {
   readOrientation();
-  // Serial.print("Roll = ");
-  // Serial.print(roll);
-  // Serial.print(" Pitch = ");
-  // Serial.println(pitch);
   scaleReceiver();
-  TIM4->CCR1 = throttle; // send throttle signal to motor
-  TIM4->CCR2 = throttle; // send throttle signal to motor
-  TIM4->CCR3 = throttle; // send throttle signal to motor
-  TIM4->CCR4 = throttle; // send throttle signal to motor
+  pidCalc();
+  TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
+  TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
+  TIM4->CCR3 = throttle - pitchInput + rollInput; // send throttle signal to motor bottom left red
+  TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
+  Serial.println(throttle + int(pitchInput) + int(rollInput));
   if (micros() - loopTimer > 4050)
     digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
   while (micros() - loopTimer < 4000)
