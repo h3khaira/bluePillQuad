@@ -33,7 +33,6 @@ HardwareTimer *timer4;
 int16_t rawGyroRoll, rawGyroPitch, rawGyroYaw;       // gyroscope measurement, resolution based on value of 1B register
 float pitchCal = -293, rollCal = -175, yawCal = 230; // for calibration ofgyro measurements
 int16_t gyroAddress = 0x68;                          // MPU-6050 I2C address
-int16_t altimeterAddress = 0x77;
 int16_t rawTemp;
 float temperature;
 int16_t rawXAcc, rawYAcc, rawZAcc; // Raw gyro acceleration values 4096 least significant bits per 9.81 m/s^2
@@ -226,26 +225,6 @@ void startGyro()
   Wire1.endTransmission();
 }
 
-void startAltimeter()
-{
-  Wire1.beginTransmission(altimeterAddress);
-  Wire1.write(0x1E); // Reset command
-  Wire1.endTransmission();
-  delay(250);
-  int i;
-  // getting calibration values from altimeter PROM, each "C" variable is 2 bytes in length, so we increment the address by 2
-  for (i = 1; i <= 6; i++)
-  {
-    Wire1.beginTransmission(altimeterAddress);
-    Wire1.write(0xA0 + i * 2);
-    Wire1.endTransmission();
-    Wire1.requestFrom(altimeterAddress, 2);
-    while (Wire1.available() < 2)
-      ;
-    c[i - 1] = Wire1.read() << 8 | Wire1.read(); // c is a 16 bit integer
-  }
-}
-
 void eulerAngles()
 {
   accPitch = 57.2958 * atan2(rawYAcc, rawZAcc);
@@ -284,6 +263,7 @@ void readOrientation()
   roll = (mpuFilterWeight * roll + (1 - mpuFilterWeight) * accRoll) * -1; // combining accelerometer and gyroscope measurements
   pitch = mpuFilterWeight * pitch + (1 - mpuFilterWeight) * accPitch;     // combining accelerometer and gyroscope measurements
 }
+
 void scaleReceiver()
 {
   throttle = (float(rawReceiverThrottle) - 1169) / 664 * 1000 + 1000; // normalize throttle between 1000 and 2000 microsecond pulse length
@@ -343,7 +323,6 @@ void setup()
   Wire1.begin();
   delay(250);
   startGyro();
-  startAltimeter();
   delay(250);
   loopTimer = micros();
 }
@@ -357,7 +336,9 @@ void loop()
   TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
   TIM4->CCR3 = throttle - pitchInput + rollInput; // send throttle signal to motor bottom left red
   TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
-  Serial.println(throttle + int(pitchInput) + int(rollInput));
+  //Serial.println(throttle + int(pitchInput) + int(rollInput));
+ // Serial.println("tst");
+  Serial.println(pitch);
   if (micros() - loopTimer > 4050)
     digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
   while (micros() - loopTimer < 4000)
