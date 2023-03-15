@@ -1,9 +1,15 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 #define pinGroupTimer1 PA2
 #define pinGroupTimer2 PA6
 #define pinGroupTimer3 PB6
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 32 // OLED display height, in pixels
+
 
 volatile int32_t rawReceiverLeftRoller, timer2Channel1Rise;
 volatile int32_t rawReceiverRightRoller, timer2Channel2Rise;
@@ -45,6 +51,7 @@ uint32_t loopTimer;
 uint16_t c[6];
 
 TwoWire Wire1(PB11, PB10); // setting pb11 and pb10 and I2C data and clock signals
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire1);
 
 void handlerLeftRoller(void) // left roller on transmitter
 {
@@ -316,11 +323,22 @@ void pidCalc()
 void setup()
 {
   Serial.begin(57600);
+  Wire1.begin();
+  
+  //Display stuff
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.clearDisplay(); 
+  display.setTextSize(1);                  
+  display.setTextColor(WHITE);
+  display.setCursor(0,0);                
+  display.println("SETUP COMPLETED");
+  display.display();
+
+//everything else
   setupTimers();
   pinMode(PB3, OUTPUT);
   pinMode(PB4, OUTPUT);
   digitalWrite(PB4, LOW);
-  Wire1.begin();
   delay(250);
   startGyro();
   delay(250);
@@ -331,14 +349,15 @@ void loop()
 {
   readOrientation();
   scaleReceiver();
-  pidCalc();
+  pidCalc();  // Serial.println("tst");
+
   TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
   TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
   TIM4->CCR3 = throttle - pitchInput + rollInput; // send throttle signal to motor bottom left red
   TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
-  //Serial.println(throttle + int(pitchInput) + int(rollInput));
- // Serial.println("tst");
+ 
   Serial.println(pitch);
+
   if (micros() - loopTimer > 4050)
     digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
   while (micros() - loopTimer < 4000)
