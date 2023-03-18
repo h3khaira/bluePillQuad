@@ -45,6 +45,11 @@ int16_t rawXAcc, rawYAcc, rawZAcc; // Raw gyro acceleration values 4096 least si
 float accRoll, accPitch;           // to store actual acceleration numbers
 float roll, pitch, yaw;
 
+
+//BATTERY VOLTAGE MEASUREMENT SETUP
+int rawVoltage; //variable for analog voltage measurement
+float batteryVoltage;
+
 float mpuFilterWeight = 0.96;
 uint32_t loopTimer;
 
@@ -324,14 +329,21 @@ void setup()
 {
   Serial.begin(57600);
   Wire1.begin();
+
+  rawVoltage = ADC_DR_DATA;
+  batteryVoltage = ((float) rawVoltage) / 4096 * 3.3;
   
   //Display stuff
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay(); 
   display.setTextSize(1);                  
   display.setTextColor(WHITE);
-  display.setCursor(0,0);                
+  display.setCursor(0,0);     
+  String buf;
+  buf += F("Battery Voltage:");
+  buf += String(batteryVoltage, 6);           
   display.println("SETUP COMPLETED");
+  display.println(buf);
   display.display();
 
 //everything else
@@ -349,15 +361,13 @@ void loop()
 {
   readOrientation();
   scaleReceiver();
-  pidCalc();  // Serial.println("tst");
+  //pidCalc();  // Serial.println("tst");
 
   TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
   TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
   TIM4->CCR3 = throttle - pitchInput + rollInput; // send throttle signal to motor bottom left red
   TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
  
-  Serial.println(pitch);
-
   if (micros() - loopTimer > 4050)
     digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
   while (micros() - loopTimer < 4000)
