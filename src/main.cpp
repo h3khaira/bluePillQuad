@@ -47,7 +47,7 @@ float roll, pitch, yaw;
 
 
 //BATTERY VOLTAGE MEASUREMENT SETUP
-int rawVoltage; //variable for analog voltage measurement
+uint16_t rawVoltage; //variable for analog voltage measurement
 float batteryVoltage;
 
 float mpuFilterWeight = 0.96;
@@ -330,8 +330,8 @@ void setup()
   Serial.begin(57600);
   Wire1.begin();
 
-  rawVoltage = ADC_DR_DATA;
-  batteryVoltage = ((float) rawVoltage) / 4096 * 3.3;
+  rawVoltage = analogRead(PA4);
+  batteryVoltage = float(rawVoltage) / 4096 * 3.3;
   
   //Display stuff
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -350,11 +350,12 @@ void setup()
   setupTimers();
   pinMode(PB3, OUTPUT);
   pinMode(PB4, OUTPUT);
-  digitalWrite(PB4, LOW);
   delay(250);
   startGyro();
   delay(250);
   loopTimer = micros();
+  digitalWrite(PB4, LOW);
+  digitalWrite(PB3, HIGH);
 }
 
 void loop()
@@ -362,6 +363,7 @@ void loop()
   readOrientation();
   scaleReceiver();
   //pidCalc();  // Serial.println("tst");
+  Serial.println(roll);
 
   TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
   TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
@@ -369,7 +371,12 @@ void loop()
   TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
  
   if (micros() - loopTimer > 4050)
-    digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
+    {
+      digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
+      display.clearDisplay(); 
+      display.println("ERROR: PROCESSING TIME EXCEEDED");
+      display.display();
+    }
   while (micros() - loopTimer < 4000)
     ; // We wait until 4000us are passed.
   loopTimer = micros();
