@@ -255,7 +255,7 @@ void readOrientation()
   rawYAcc = Wire1.read() << 8 | Wire1.read();
   rawZAcc = Wire1.read() << 8 | Wire1.read();
   rawTemp = Wire1.read() << 8 | Wire1.read();
-  // temperature = rawTemp/340.0 + 36.53; //uncomment this to read temperature
+  temperature = rawTemp/340.0 + 36.53; //uncomment this to read temperature
   rawGyroPitch = Wire1.read() << 8 | Wire1.read();
   rawGyroRoll = Wire1.read() << 8 | Wire1.read();
   rawGyroYaw = Wire1.read() << 8 | Wire1.read();
@@ -350,11 +350,11 @@ void setup()
   setupTimers();
   pinMode(PB3, OUTPUT);
   pinMode(PB4, OUTPUT);
+  digitalWrite(PB4, LOW);
   delay(250);
   startGyro();
   delay(250);
   loopTimer = micros();
-  digitalWrite(PB4, LOW);
   digitalWrite(PB3, HIGH);
 }
 
@@ -363,7 +363,7 @@ void loop()
   readOrientation();
   scaleReceiver();
   //pidCalc();  // Serial.println("tst");
-  Serial.println(roll);
+  Serial.println(pitch);
 
   TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
   TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
