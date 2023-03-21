@@ -37,7 +37,7 @@ HardwareTimer *timer4;
 
 // using int16 as mpu6050 returns a 16 bit two's complement value. using int16 will auto resolve it into a 16 bit number instead of 32 bit if you use int
 int16_t rawGyroRoll, rawGyroPitch, rawGyroYaw;       // gyroscope measurement, resolution based on value of 1B register
-float pitchCal = -293, rollCal = -175, yawCal = 230; // for calibration ofgyro measurements
+float pitchCal = 123, rollCal = -25, yawCal = -15; // for calibration ofgyro measurements
 int16_t gyroAddress = 0x68;                          // MPU-6050 I2C address
 int16_t rawTemp;
 float temperature;
@@ -240,7 +240,7 @@ void startGyro()
 void eulerAngles()
 {
   accPitch = 57.2958 * atan2(rawYAcc, rawZAcc);
-  accRoll = 57.2958 * atan2(rawXAcc, sqrt(pow(rawYAcc, 2) + pow(rawZAcc, 2)));
+  accRoll = -57.2958 * atan2(rawXAcc, sqrt(pow(rawYAcc, 2) + pow(rawZAcc, 2)));
 }
 
 void readOrientation()
@@ -255,7 +255,7 @@ void readOrientation()
   rawYAcc = Wire1.read() << 8 | Wire1.read();
   rawZAcc = Wire1.read() << 8 | Wire1.read();
   rawTemp = Wire1.read() << 8 | Wire1.read();
-  temperature = rawTemp/340.0 + 36.53; //uncomment this to read temperature
+  //temperature = rawTemp/340.0 + 36.53; //uncomment this to read temperature
   rawGyroPitch = Wire1.read() << 8 | Wire1.read();
   rawGyroRoll = Wire1.read() << 8 | Wire1.read();
   rawGyroYaw = Wire1.read() << 8 | Wire1.read();
@@ -332,7 +332,7 @@ void setup()
 
   rawVoltage = analogRead(PA4);
   batteryVoltage = float(rawVoltage) / 4096 * 3.3;
-  
+ 
   //Display stuff
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay(); 
@@ -363,7 +363,6 @@ void loop()
   readOrientation();
   scaleReceiver();
   //pidCalc();  // Serial.println("tst");
-  Serial.println(pitch);
 
   TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
   TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
