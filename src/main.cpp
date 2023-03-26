@@ -47,7 +47,6 @@ float roll, pitch, yaw;
 
 
 //BATTERY VOLTAGE MEASUREMENT SETUP
-uint16_t rawVoltage; //variable for analog voltage measurement
 float batteryVoltage;
 
 float mpuFilterWeight = 0.96;
@@ -330,8 +329,7 @@ void setup()
   Serial.begin(57600);
   Wire1.begin();
 
-  rawVoltage = analogRead(PA4);
-  batteryVoltage = float(rawVoltage) / 4096 * 3.3;
+  batteryVoltage = 11.1/3.3*(float)analogRead(4)/112.81;
  
   //Display stuff
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
@@ -360,15 +358,19 @@ void setup()
 
 void loop()
 {
+  batteryVoltage =batteryVoltage*0.92+ (float)analogRead(4)/112.81*0.08;
   readOrientation();
   scaleReceiver();
-  //pidCalc();  // Serial.println("tst");
+  pidCalc();
 
-  TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
-  TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
-  TIM4->CCR3 = throttle - pitchInput + rollInput; // send throttle signal to motor bottom left red
-  TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
- 
+//safety check
+  if (throttle>1001){
+    TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
+    TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
+    TIM4->CCR3 = throttle - pitchInput + rollInput; // send throttle signal to motor bottom left red
+    TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
+  }
+
   if (micros() - loopTimer > 4050)
     {
       digitalWrite(PB4, HIGH); // throw an error if refresh rate is lower than 250 Hz, this affects angle calculation
