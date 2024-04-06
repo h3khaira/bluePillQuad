@@ -11,6 +11,7 @@ The brain of the drone is the STM32F103 "Blue pill" controller pictured above. T
 ## Development Platform
 
 I decided to use platformIO for developing the code for this project, with the arduino and stm32duino tools. 
+
 https://github.com/h3khaira/bluePillQuad/blob/93b4a383c6f1992de7543bbd68de41c283f07ee7/platformio.ini#L10C1-L30C34
 
 
