@@ -362,13 +362,29 @@ void loop()
   readOrientation();
   scaleReceiver();
   pidCalc();
+  Serial.print("Roll: ");
+  Serial.println(rawReceiverRoll);
+  Serial.print("Pitch: ");
+  Serial.println(rawReceiverPitch);
+  Serial.print("Yaw: ");
+  Serial.println(rawReceiverYaw);
+  Serial.print("Throttle: ");
+  Serial.println(rawReceiverThrottle);
 
 //safety check
   if (throttle>1001){
-    TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
-    TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
-    TIM4->CCR3 = throttle - pitchInput + rollInput; // send throttle signal to motor bottom left red
-    TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
+    // TIM4->CCR1 = throttle - pitchInput + rollInput; // send throttle signal to motor top left white
+    // TIM4->CCR2 = throttle - pitchInput - rollInput; // send throttle signal to motor top right white
+    // TIM4->CCR3 = throttle - pitchInput + rollInput; // send throttle signal to motor bottom left red
+    // TIM4->CCR4 = throttle - pitchInput - rollInput; // send throttle signal to motor bottom right red
+    TIM4->CCR1 = throttle; // send throttle signal to motor bottom right red
+  }
+  else {
+    // if throttle is set to zero turn off the motors, this is a safety lock
+    TIM4->CCR1 = 1000; // send throttle signal to motor top left white
+    TIM4->CCR2 = 1000; // send throttle signal to motor top left white
+    TIM4->CCR3 = 1000; // send throttle signal to motor top left white
+    TIM4->CCR4 = 1000; // send throttle signal to motor top left white
   }
 
   if (micros() - loopTimer > 4050)
