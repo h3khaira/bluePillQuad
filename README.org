@@ -69,5 +69,12 @@ Communication to the MPU-6050 module is done using the following code snippet:
 The I2C address for this module is 0x68. Arduino contains the library "twowire" for I2C communication, which we use to interact with the data registers of MPU-6050. The register map for the MPU-6050 can be found [[https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf][here.]]
 We first, wake up the MPU-6050 module, configure the resolution of the gyroscope and accelerometer measurements, and apply the in-built digital low pass filter to reduce the noise in the measurements.
 
-*** Pulse Width Modulation and Initializing the Motors
+*** Hardware Timers, Pulse Width Modulation, interrupts and Working with Receivers
+In order to interact with the motors and receivers with the stm32, we need to work with the hardware timers included on this board. The stm32 board has four (4) hardware timers built-in.
+
+The stm32 has a main clock speed of 72 MHz, so we set the prescaler value to 72 to allow our timers to reset at 1 MHz. 
+
+Looking at the register map for STM32, we can see that timers TIM2 to TIM8 are general purpose timers, so we will be using those timers for our use-case. These timers can be used to either capture input pulse lengths, or to output pulses of specified length.
+We know that the receiver outputs signals in terms of pulse lengths. We also know that motor speed control is achieved through pulse length modulation. Therefore, this is the perfect use case for hardware timers. We initialize timer 2 and timer 3 for handling the receiver inputs, and timer 4 to serve as the PWM output to control the motors.
+
 
