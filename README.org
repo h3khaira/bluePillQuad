@@ -1,17 +1,41 @@
 * bluePillQuad
-A drone flight controller using the STM32F103 Blue Pill
+A drone flight controller using the STM32F103 Blue Pill. This project is heavily influenced by Joop Brokking, whose project can be found here [[https://www.youtube.com/watch?v=MLEQk73zJoU&t=51s][on his youtube channel.]]
 
-* Components
+** Components
 
-./extra/drone.jpg
+./extra/drone.png
 
 This drone uses a generic F450 drone frame as the main platform. The motors are four (4) 1000 KV rated motors from aliexpress.
 
 The brain of the drone is the STM32F103 "Blue pill" controller pictured above. The drone also uses a generic MPU6050 module for its orientation measurements. The drone also uses some LEDs for error signals as well as a generic SSD1306 OLED display module. 
 
-* Development Platform
+** Development Platform
 
-I decided to use platformIO for developing the code for this project, with the arduino and stm32duino tools. 
+I decided to use platformIO for developing the code for this project, with the arduino and stm32duino tools. The platfomio.ini content I used is listed below.
 
+By default the blue pill boards require a debugger such as an ST-LINK for flashing and debugging. However, there is luckily a bootloader available that allows for flashing and debugging using the USB serial ports like a standard Arduino. I have prepared a short guide on how to make this work on my [[http://harseeratkhaira.com/pages/howToUsePlatformIO.html][website.]]
+#+begin_src 
+[env:bluepill_f103c8]
+platform = ststm32
+board = bluepill_f103c8
+upload_protocol = hid
+upload_port = /dev/ttyACM0
+framework = arduino
+monitor_speed = 57600
+board_build.core = stm32duino
+build_flags = 
+	-D PIO_FRAMEWORK_ARDUINO_ENABLE_CDC
+	-D USBCON
+	-D USBD_VID=0x0483
+	-D USBD_PID=0x5740
+	-D USB_MANUFACTURER="Unkown"
+	-D USB_PRODUCT="\"BLUEPILL_F103C8\""
+	-D HAL_PCD_MODULE_ENABLED
+monitor_dtr = 1
+lib_deps = 
+	adafruit/Adafruit GFX Library@^1.11.5
+	adafruit/Adafruit SSD1306@^2.5.7
+#+end_src
 
-
+** Hardware Interaction
+*** MPU-6050 IMU
