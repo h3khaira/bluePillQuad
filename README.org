@@ -1,7 +1,6 @@
-* bluePillQuad
 A drone flight controller using the STM32F103 Blue Pill. This project is heavily influenced by Joop Brokking, whose project can be found here [[https://www.youtube.com/watch?v=MLEQk73zJoU&t=51s][on his youtube channel.]]
 
-** Components
+* Components
 #+ATTR_HTML: width="300px"
 #+ATTR_ORG: :width 300
 [[./extra/drone.jpg]]
@@ -20,7 +19,7 @@ The brain of the drone is the STM32F103 "Blue pill" controller pictured above. T
 | OLED Display         | SSD1306 OLED Display Modules                       |
 | Transmitter/Receiver | Hobby King 2.4 GHz HK T6A V2 6-channel transmitter |
 
-** Development Platform
+* Development Platform
 
 I decided to use platformIO for developing the code for this project, with the arduino and stm32duino tools. The platfomio.ini content I used is listed below.
 
@@ -48,8 +47,8 @@ lib_deps =
 	adafruit/Adafruit SSD1306@^2.5.7
 #+end_src
 
-** Hardware Interaction
-*** MPU-6050 IMU
+* Hardware Interaction
+** MPU-6050 IMU
 Communication to the MPU-6050 module is done using the following code snippet:
 #+begin_src
   void startGyro()
@@ -79,7 +78,7 @@ Communication to the MPU-6050 module is done using the following code snippet:
 The I2C address for this module is 0x68. Arduino contains the library "twowire" for I2C communication, which we use to interact with the data registers of MPU-6050. The register map for the MPU-6050 can be found [[https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf][here.]]
 We first, wake up the MPU-6050 module, configure the resolution of the gyroscope and accelerometer measurements, and apply the in-built digital low pass filter to reduce the noise in the measurements.
 
-*** Hardware Timers, Pulse Width Modulation, interrupts and Working with Receivers
+** Hardware Timers, Pulse Width Modulation, interrupts and Working with Receivers
 In order to interact with the motors and receivers with the stm32, we need to work with the hardware timers included on this board. The stm32 board has four (4) hardware timers built-in.
 
 The stm32 has a main clock speed of 72 MHz, so we set the prescaler value to 72 to allow our timers to reset at 1 MHz.
@@ -88,5 +87,13 @@ Looking at the register map for STM32, we can see that timers TIM2 to TIM8 are g
 
 We know that the receiver outputs signals in terms of pulse lengths. We also know that motor speed control is achieved through pulse length modulation. Therefore, this is the perfect use case for hardware timers. We initialize timer 2 and timer 3 for handling the receiver inputs, and timer 4 to serve as the PWM output to control the motors.
 
-**** Receiver Interrupts
+*** Receiver Interrupts
 The receiver pins are connected to pins A0 to A3 and A6, A7 on the blue pill. The blue pill pinout diagram shows that A0 to A3 are connected to hardware timer 2 and pins A6 and A7 are connected to timer 3. We will utilize the input capture mode on these timers to detect when the receiver sends a pulse into each pin and generate an interrupt.
+
+The input capture mode works by using the CCLR register to detect rise and falling edges of a pulse. For each time a falling/rising edge is detected, the capture compare register CCR1 is populated by the value of the counter register CNT. An interrupt is then generated through the DIER register which can be handled by an interrupt handler. By comparing the time between the rising and falling edges, the length of the pulse can be determined. This pulse length represents the states of the throttle, pitch/roll level, etc on the transmitter.
+
+The setting of registers in C++ is done using the following code:
+#+begin_src
+  TIM3->DIER = TIM_DIER_CC1IE | TIM_DIER_CC2IE; // capture/compare 1,2 interrupt enable
+#+end_src
+In this case, the CC1IE and CC2IE bits are set in the DIER register to enable the interrupt
