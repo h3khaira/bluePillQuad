@@ -8,14 +8,24 @@ A drone flight controller using the STM32F103 Blue Pill. This project is heavily
 
 This drone uses a generic F450 drone frame as the main platform. The motors are four (4) 1000 KV rated motors from aliexpress.
 
-The brain of the drone is the STM32F103 "Blue pill" controller pictured above. The drone also uses a generic MPU6050 module for its orientation measurements. The drone also uses some LEDs for error signals as well as a generic SSD1306 OLED display module. 
+The brain of the drone is the STM32F103 "Blue pill" controller pictured above. The drone also uses a generic MPU6050 module for its orientation measurements. The drone also uses some LEDs for error signals as well as a generic SSD1306 OLED display module. A summary of the components for this drone are listed below.
+
+| Item                 | Name                                               |
+| Controller           | STM32F103C8T6 'Blue Pill'                          |
+| IMU                  | MPU-6050                                           |
+| Frame                | F-450 Generic                                      |
+| Motors               | QWinOut 1000 KV motors                             |
+| Speed Controller     | Generic 30A Electronic Speed Controller            |
+| Battery              | Generic 3 cell lipo battery                        |
+| OLED Display         | SSD1306 OLED Display Modules                       |
+| Transmitter/Receiver | Hobby King 2.4 GHz HK T6A V2 6-channel transmitter |
 
 ** Development Platform
 
 I decided to use platformIO for developing the code for this project, with the arduino and stm32duino tools. The platfomio.ini content I used is listed below.
 
 By default the blue pill boards require a debugger such as an ST-LINK for flashing and debugging. However, there is luckily a bootloader available that allows for flashing and debugging using the USB serial ports like a standard Arduino. I have prepared a short guide on how to make this work on my [[http://harseeratkhaira.com/pages/howToUsePlatformIO.html][website.]]
-#+begin_src 
+#+begin_src
 [env:bluepill_f103c8]
 platform = ststm32
 board = bluepill_f103c8
@@ -24,7 +34,7 @@ upload_port = /dev/ttyACM0
 framework = arduino
 monitor_speed = 57600
 board_build.core = stm32duino
-build_flags = 
+build_flags =
 	-D PIO_FRAMEWORK_ARDUINO_ENABLE_CDC
 	-D USBCON
 	-D USBD_VID=0x0483
@@ -33,7 +43,7 @@ build_flags =
 	-D USB_PRODUCT="\"BLUEPILL_F103C8\""
 	-D HAL_PCD_MODULE_ENABLED
 monitor_dtr = 1
-lib_deps = 
+lib_deps =
 	adafruit/Adafruit GFX Library@^1.11.5
 	adafruit/Adafruit SSD1306@^2.5.7
 #+end_src
@@ -72,9 +82,11 @@ We first, wake up the MPU-6050 module, configure the resolution of the gyroscope
 *** Hardware Timers, Pulse Width Modulation, interrupts and Working with Receivers
 In order to interact with the motors and receivers with the stm32, we need to work with the hardware timers included on this board. The stm32 board has four (4) hardware timers built-in.
 
-The stm32 has a main clock speed of 72 MHz, so we set the prescaler value to 72 to allow our timers to reset at 1 MHz. 
+The stm32 has a main clock speed of 72 MHz, so we set the prescaler value to 72 to allow our timers to reset at 1 MHz.
 
 Looking at the register map for STM32, we can see that timers TIM2 to TIM8 are general purpose timers, so we will be using those timers for our use-case. These timers can be used to either capture input pulse lengths, or to output pulses of specified length.
+
 We know that the receiver outputs signals in terms of pulse lengths. We also know that motor speed control is achieved through pulse length modulation. Therefore, this is the perfect use case for hardware timers. We initialize timer 2 and timer 3 for handling the receiver inputs, and timer 4 to serve as the PWM output to control the motors.
 
-
+**** Receiver Interrupts
+The receiver pins are connected to pins A0 to A3 and A6, A7 on the blue pill. The blue pill pinout diagram shows that A0 to A3 are connected to hardware timer 2 and pins A6 and A7 are connected to timer 3. We will utilize the input capture mode on these timers to detect when the receiver sends a pulse into each pin and generate an interrupt.
