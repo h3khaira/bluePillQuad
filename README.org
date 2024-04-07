@@ -2,8 +2,9 @@
 A drone flight controller using the STM32F103 Blue Pill. This project is heavily influenced by Joop Brokking, whose project can be found here [[https://www.youtube.com/watch?v=MLEQk73zJoU&t=51s][on his youtube channel.]]
 
 ** Components
-
-./extra/drone.png
+#+ATTR_HTML: width="300px"
+#+ATTR_ORG: :width 300
+[[./extra/drone.jpg]]
 
 This drone uses a generic F450 drone frame as the main platform. The motors are four (4) 1000 KV rated motors from aliexpress.
 
@@ -39,3 +40,34 @@ lib_deps =
 
 ** Hardware Interaction
 *** MPU-6050 IMU
+Communication to the MPU-6050 module is done using the following code snippet:
+#+begin_src
+  void startGyro()
+{
+  Wire1.beginTransmission(gyroAddress);
+  Wire1.write(0x6B); // power management register
+  Wire1.write(0x00); // setting this bit wakes up the MPU-6050 module
+  Wire1.endTransmission();
+
+  Wire1.beginTransmission(gyroAddress);
+  Wire1.write(0x1B); // Access the GYRO_CONFIG register
+  Wire1.write(0x08); // Write the FS_SEL bits to change gyro resolution to 500 degrees per second, 1 DEG/SEC  = 65.5 OUTPUT FROM GYRO LSB (check page 31 of manual)
+  Wire1.endTransmission();
+
+  Wire1.beginTransmission(gyroAddress);
+  Wire1.write(0x1C); // Access accelerometer config register
+  Wire1.write(0x10); // Set the AFSL bit +-8g = 4096 LSB/g
+  Wire1.endTransmission();
+
+  Wire1.beginTransmission(gyroAddress);
+  Wire1.write(0x1A); // Access CONFIG register
+  Wire1.write(0x03); // Digial Low Pass Filter for gyro/accelorometer set to 43 Hz
+  Wire1.endTransmission();
+}
+#+end_src
+
+The I2C address for this module is 0x68. Arduino contains the library "twowire" for I2C communication, which we use to interact with the data registers of MPU-6050. The register map for the MPU-6050 can be found [[https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf][here.]]
+We first, wake up the MPU-6050 module, configure the resolution of the gyroscope and accelerometer measurements, and apply the in-built digital low pass filter to reduce the noise in the measurements.
+
+*** Pulse Width Modulation and Initializing the Motors
+
