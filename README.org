@@ -78,7 +78,7 @@ Communication to the MPU-6050 module is done using the following code snippet:
 The I2C address for this module is 0x68. Arduino contains the library "twowire" for I2C communication, which we use to interact with the data registers of MPU-6050. The register map for the MPU-6050 can be found [[https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Register-Map1.pdf][here.]]
 We first, wake up the MPU-6050 module, configure the resolution of the gyroscope and accelerometer measurements, and apply the in-built digital low pass filter to reduce the noise in the measurements.
 
-** Hardware Timers, Pulse Width Modulation, interrupts and Working with Receivers
+** Hardware Timers, Pulse Width Modulation, Interrupts and Working with Receivers
 In order to interact with the motors and receivers with the stm32, we need to work with the hardware timers included on this board. The stm32 board has four (4) hardware timers built-in.
 
 The stm32 has a main clock speed of 72 MHz, so we set the prescaler value to 72 to allow our timers to reset at 1 MHz.
@@ -92,8 +92,25 @@ The receiver pins are connected to pins A0 to A3 and A6, A7 on the blue pill. Th
 
 The input capture mode works by using the CCLR register to detect rise and falling edges of a pulse. For each time a falling/rising edge is detected, the capture compare register CCR1 is populated by the value of the counter register CNT. An interrupt is then generated through the DIER register which can be handled by an interrupt handler. By comparing the time between the rising and falling edges, the length of the pulse can be determined. This pulse length represents the states of the throttle, pitch/roll level, etc on the transmitter.
 
-The setting of registers in C++ is done using the following code:
+The setting of registers in C++ is done using the following code as an example:
 #+begin_src
   TIM3->DIER = TIM_DIER_CC1IE | TIM_DIER_CC2IE; // capture/compare 1,2 interrupt enable
 #+end_src
-In this case, the CC1IE and CC2IE bits are set in the DIER register to enable the interrupt
+In this case, the CC1IE and CC2IE bits are set in the DIER register to enable the interrupt.
+*** Controlling Motor Speeds
+The motor speed is controlled by sending the electronic speed controller a square pulse of a length between 1000-2000 microseconds, where 1000 microseconds indicates 0% speed and 2000 indicates 100% speed. Before the motors can be controlled, they need to be initialized by sending them a pulse of 1000 microseconds after power on. Without a microcontroller, this is done by moving the throttle into a "0" position. We will do so by sending each motor one pulse of 1000 microseconds at the start of our program.
+
+The motors are connected to pins B6-B9, which are dedicated to Timer 4 channels 1-4. Therefore, we will need to set up this timer for us to interact with these motors. We will set these pins up in "PWM" mode according to the STM32 manual. This is done by setting the OCM bits according to the following code:
+
+#+begin_src
+  TIM4->CCMR1 = 0b0110100001101000;// setting OC2M and OC1M bits to 110, also setting OC2PE and OC1PE bits to 1
+  TIM4->CCMR2 = 0b0110100001101000;
+#+end_src
+
+We can then directly indicate the length of pulse we want to send to each motor. For instance; the code snippet below shows how to initialize all four motors by sending a 1000 microsecond pulse.
+#+begin_src
+  TIM4->CCR1 = 1000; // register value here determines the pulse length, a 1000 microsecond length here initializes the motors
+  TIM4->CCR2 = 1000;
+  TIM4->CCR3 = 1000;
+  TIM4->CCR4 = 1000;
+#+end_src
