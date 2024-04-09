@@ -114,3 +114,7 @@ We can then directly indicate the length of pulse we want to send to each motor.
   TIM4->CCR3 = 1000;
   TIM4->CCR4 = 1000;
 #+end_src
+* Controller
+A quadrocopter is inherently an unstable system. Without some form of active control it cannot fly, as even a tiny deviation in the system such as one motor being slightly faster than the other cause the device to crash. Therefore, we need to provide active management of the inputs into the motors. We can do this by using a PID controller.
+
+The idea is that we take the measurements coming in from our IMU (the MPU6050 module), do some math with them, incorporate them with the input coming in from the transmitter/receiver (and therefore the pilot) and then provide inputs to each motor to achieve the desired effect.
